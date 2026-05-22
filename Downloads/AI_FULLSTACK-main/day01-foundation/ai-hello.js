@@ -1,41 +1,68 @@
 // ai-hello.js
-// Day 1: First AI integration (future-ready)
+// Day 1: First AI integration (future-ready + fallback safe)
 
-// Load environment variables from .env file
+// Load environment variables
 require("dotenv").config();
 
 // Import OpenAI SDK
 const OpenAI = require("openai");
 
-// Create OpenAI client using API key
+// Create OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // never hardcode keys
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Function to ask AI a question
+// ------------------------------
+// MOCK AI (fallback if API fails)
+// ------------------------------
+function mockAI(question) {
+  console.log("\n⚠️ Running in MOCK MODE (no API usage)");
+
+  console.log("\n📤 Sending to AI:", question);
+
+  setTimeout(() => {
+    console.log("\n🤖 AI Response (MOCK):");
+    console.log("--------------------------------");
+    console.log("1. Works on frontend (UI)");
+    console.log("2. Works on backend (server & APIs)");
+    console.log("3. Connects database and deploys applications");
+    console.log("--------------------------------");
+    console.log("✅ Completed successfully (mock response)");
+  }, 1200);
+}
+
+// ------------------------------
+// REAL AI CALL
+// ------------------------------
 async function askAI(question) {
   try {
-    // Show what is being sent
     console.log("\n📤 Sending to AI:", question);
 
-    // Call OpenAI Responses API
     const response = await openai.responses.create({
-      model: "gpt-4.1-mini", // cheap + current model
-      input: question,       // simple input for beginners
+      model: "gpt-4.1-mini",
+      input: question,
     });
 
-    // Get final AI text safely
     const aiReply = response.output_text;
 
-    // Print AI response
     console.log("\n🤖 AI Response:");
+    console.log("--------------------------------");
     console.log(aiReply);
+    console.log("--------------------------------");
 
   } catch (error) {
-    // Print any error clearly
-    console.error("\n❌ Error:", error.message);
+    console.log("\n❌ OpenAI API failed:", error.message);
+
+    // If quota error → fallback automatically
+    if (error.status === 429 || error.code === "insufficient_quota") {
+      mockAI(question);
+    } else {
+      console.log("⚠️ Unknown error occurred");
+    }
   }
 }
 
-// Test call (must print output)
+// ------------------------------
+// TEST CALL
+// ------------------------------
 askAI("Summarize what a full-stack developer does in 3 bullet points.");
